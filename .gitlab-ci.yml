@@ -2,7 +2,6 @@ stages:
   - deploy
 
 deploy_to_infinityfree:
-  image: alpine:latest
   stage: deploy
   only:
     - main
