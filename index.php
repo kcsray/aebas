@@ -1,11 +1,12 @@
 <?php
 // Database connection
+//
 $password = 'mysql';
 $host = 'sql100.infinityfree.com';
 $dbname = 'if0_40578902_nicaebas';
 $username = 'if0_40578902';
 $password = 'Github123AXN';
-
+//
 try {
     
     $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
