@@ -43,7 +43,7 @@ try {
         FROM
             (`returned` `r`
         JOIN `office_loc` `o` ON ((`r`.`Loc_ID` = `o`.`Location_CD`)))) `actions`
-    ORDER BY `actions`.`emp_cd` , `actions`.`issue_date`"
+    ORDER BY `actions`.`emp_cd` , `actions`.`issue_date`";
 
     $stmt = $conn->prepare($sql);
     $stmt->execute();
