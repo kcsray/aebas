@@ -14,9 +14,37 @@ try {
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
     // Execute the query
+   /* 
     $sql = "SELECT emp_cd, emp_name, device_slno, issue_date, return_date, Office_location 
             FROM ledger_view, emp 
             WHERE emp.Att_ID=ledger_view.emp_cd order by emp_name, issue_date";
+*/
+    $sql =  "SELECT 
+        `actions`.`emp_cd` AS `emp_cd`,
+        `actions`.`device_slno` AS `device_slno`,
+        `actions`.`issue_date` AS `issue_date`,
+        `actions`.`return_date` AS `return_date`,
+        `actions`.`Office_location` AS `Office_location`
+    FROM
+        (SELECT 
+            `i`.`emp_cd` AS `emp_cd`,
+                `i`.`device_slno` AS `device_slno`,
+                `i`.`issu_date` AS `issue_date`,
+                '---' AS `return_date`,
+                `o`.`Office_Location` AS `Office_location`
+        FROM
+            (`issued` `i`
+        JOIN `office_loc` `o` ON ((`i`.`Loc_ID` = `o`.`Location_CD`))) UNION ALL SELECT 
+            `r`.`emp_cd` AS `emp_cd`,
+                `r`.`device_slno` AS `device_slno`,
+                `r`.`issu_date` AS `issue_date`,
+                `r`.`return_date` AS `return_date`,
+                `o`.`Office_Location` AS `Office_location`
+        FROM
+            (`returned` `r`
+        JOIN `office_loc` `o` ON ((`r`.`Loc_ID` = `o`.`Location_CD`)))) `actions`
+    ORDER BY `actions`.`emp_cd` , `actions`.`issue_date`"
+
     $stmt = $conn->prepare($sql);
     $stmt->execute();
     
