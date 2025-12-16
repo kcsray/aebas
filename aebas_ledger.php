@@ -6,7 +6,7 @@ $username = "root";
 $password = "mysql";
 $dbname = "aebas";
 */
-require_once "./config.php";
+require_once "config.php";
 try {
     $conn = new PDO("mysql:host=$host;port=$port;dbname=$dbname", $username, $password);
     // Set the PDO error mode to exception
