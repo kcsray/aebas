@@ -14,7 +14,7 @@ $dbname = 'aebas';
 $username = 'root';
 $password = 'mysql';
 */
-required "config.php"
+require_once "config.php";
 try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
