@@ -8,11 +8,13 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
     exit;
 }
 // Database connection
+/*
 $host = 'localhost';
 $dbname = 'aebas';
 $username = 'root';
 $password = 'mysql';
-
+*/
+required "config.php"
 try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
