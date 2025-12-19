@@ -1,10 +1,8 @@
 <?php
 // Database connection
-$host = 'localhost';
-$dbname = 'aebas';
-$username = 'root'; // Replace with your database username
-$password = 'mysql'; // Replace with your database password
 
+
+require_once "config.php";
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
