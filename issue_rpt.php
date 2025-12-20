@@ -1,8 +1,6 @@
 <?php
 // Database connection
-
-echo "Hello";
-exit(0);
+/*
 $host = 'sql100.infinityfree.com';
 $dbname = 'if0_40578902_nicaebas';
 $username = 'if0_40578902';
