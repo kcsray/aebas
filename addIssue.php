@@ -21,28 +21,76 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
         exit();
     }else{
         require_once "config.php";
-        // Prepare an insert statement
-        $sql = "CALL IssueDevice(:active_emp, :dev_id, :off_loc, :issue_date)";
-
-        if($stmt = $pdo->prepare($sql)){
-            // Bind variables to the prepared statement as parameters
-            $stmt->bindParam(":active_emp", $input_active_emp, PDO::PARAM_STR);
-            $stmt->bindParam(":dev_id", $input_dev_id, PDO::PARAM_STR);
-            $stmt->bindParam(":off_loc", $input_off_loc, PDO::PARAM_STR);
-            $stmt->bindParam(":issue_date",$input_issue_dt , PDO::PARAM_STR);
-
-            // Attempt to execute the prepared statement
-            if($stmt->execute()){
-                // Records created successfully. Redirect to landing page
-                $_SESSION["SLNO"] = $input_dev_id;
-                header("location: welcome_Vpass.php");
-                exit();
-            } else{
-                echo "Something went wrong. Please try again later.";
+        
+        try {
+            // Start transaction
+            $pdo->beginTransaction();
+            
+            // First, check if device exists and is not already issued
+            $check_sql = "SELECT SLNO, Isissued FROM device WHERE SLNO = :slno";
+            $check_stmt = $pdo->prepare($check_sql);
+            $check_stmt->bindParam(":slno", $input_dev_id, PDO::PARAM_STR);
+            $check_stmt->execute();
+            
+            $device = $check_stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$device) {
+                throw new Exception("Device not found.");
             }
+            
+            if ($device['Isissued'] == 1) {
+                throw new Exception("Device is already issued.");
+            }
+            
+            // Insert into 'issued' table
+            $insert_sql = "INSERT INTO issued (emp_cd, device_slno, Loc_ID, issu_date) 
+                           VALUES (:active_emp, :dev_id, :off_loc, :issue_date)";
+            $insert_stmt = $pdo->prepare($insert_sql);
+            $insert_stmt->bindParam(":active_emp", $input_active_emp, PDO::PARAM_STR);
+            $insert_stmt->bindParam(":dev_id", $input_dev_id, PDO::PARAM_STR);
+            $insert_stmt->bindParam(":off_loc", $input_off_loc, PDO::PARAM_STR);
+            $insert_stmt->bindParam(":issue_date", $input_issue_dt, PDO::PARAM_STR);
+            
+            if (!$insert_stmt->execute()) {
+                throw new Exception("Failed to insert issue record.");
+            }
+            
+            // Update status in 'devices' table to 1 (issued)
+            $update_sql = "UPDATE device SET Isissued = 1 WHERE SLNO = :slno";
+            $update_stmt = $pdo->prepare($update_sql);
+            $update_stmt->bindParam(":slno", $input_dev_id, PDO::PARAM_STR);
+            
+            if (!$update_stmt->execute()) {
+                throw new Exception("Failed to update device status.");
+            }
+            
+            // Commit transaction
+            $pdo->commit();
+            
+            // Records created successfully. Redirect to landing page
+            $_SESSION["SLNO"] = $input_dev_id;
+            header("location: welcome_Vpass.php");
+            exit();
+            
+        } catch (Exception $e) {
+            // Rollback transaction on error
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            
+            // Handle the error appropriately
+            // You might want to log the error or show a user-friendly message
+            error_log("Error issuing device: " . $e->getMessage());
+            
+            // You can redirect to an error page or show an error message
+            // For now, we'll show the error message
+            echo "Error: " . htmlspecialchars($e->getMessage()) . ". Please try again later.";
+            
+            // Alternatively, you can redirect to an error page:
+            // $_SESSION['error'] = $e->getMessage();
+            // header("location: error.php");
+            // exit();
         }
-        // Close statement
-        unset($stmt);
     }
 }
 ?>
@@ -78,6 +126,14 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
+        .error-message {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
     </style>
     <title>Issue BAS Device</title>
 </head>
@@ -86,6 +142,14 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
         <div class="page-header">
             <h2 class="text-danger text-center">Issue Device</h2>
         </div>
+        
+        <?php
+        // Display any error messages if they exist
+        if (isset($error)) {
+            echo '<div class="error-message">' . htmlspecialchars($error) . '</div>';
+        }
+        ?>
+        
         <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" class="needs-validation" novalidate>
             <div class="form-group">
                 <label for="active_emp">Active Employee:</label>
@@ -107,7 +171,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 
             <div class="form-group">
                 <label for="issue_dt">Issue Date:</label>
-                <input id="issue_dt" name="issue_dt" type="date" data-date="" data-date-format="DD MMMM YYYY" value="2024-01-01" required>
+                <input id="issue_dt" name="issue_dt" type="date" data-date="" data-date-format="DD MMMM YYYY" value="<?php echo date('Y-m-d'); ?>" required>
                 <div class="invalid-feedback">Please fill out this field with valid Data</div>
             </div>
 
@@ -128,15 +192,15 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-bordered table-hover mb-0 history-table" id="empHistory">
-<thead>
-    <tr>
-        <th>Employee Code</th>
-        <th>Device Serial</th>
-        <th>Date</th>
-        <th>Office Location</th>
-        <th>Action Type</th>
-    </tr>
-</thead>
+                        <thead>
+                            <tr>
+                                <th>Employee Code</th>
+                                <th>Device Serial</th>
+                                <th>Date</th>
+                                <th>Office Location</th>
+                                <th>Action Type</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             <!-- History data will be loaded here via AJAX -->
                         </tbody>
@@ -181,7 +245,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             });
         });
 
-        // Load device dropdown
+        // Load device dropdown - only show unissued devices
         $(document).ready(function(){
             var dev_code='dev_code';
             
@@ -238,14 +302,12 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             }
         }
 
-        function getDate(){
-            var todaydate = new Date();
-            var day = todaydate.getDate();
-            var month = todaydate.getMonth() + 1;
-            var year = todaydate.getFullYear();
-            var datestring = year + "/" + month + "/" + day;
-            return datestring;
-        }
+        // Set default date to today
+        $(document).ready(function() {
+            var today = new Date();
+            var formattedDate = today.toISOString().split('T')[0];
+            $('#issue_dt').val(formattedDate);
+        });
     </script>
 </body>
 </html>
