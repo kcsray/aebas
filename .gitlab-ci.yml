@@ -1,0 +1,15 @@
+stages:
+  - deploy
+
+deploy_to_infinityfree:
+  image: alpine:latest
+  stage: deploy
+  only:
+    - main
+  variables:
+    LOCAL_FOLDER: "."  # Change if your public folder is different (e.g., "public")
+  before_script:
+    - apk add --no-cache lftp
+  script:
+    - lftp -c "set ftp:ssl-allow no; open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_HOST; mirror -R --delete --verbose $LOCAL_FOLDER $FTP_REMOTE_DIR"
+  artifacts: {}

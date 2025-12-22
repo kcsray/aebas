@@ -1,11 +1,14 @@
 <?php
 // Database connection
-$host = 'localhost';
-$dbname = 'aebas';
-$username = 'root';
+//
 $password = 'mysql';
-
+$host = 'sql100.infinityfree.com';
+$dbname = 'if0_40578902_nicaebas';
+$username = 'if0_40578902';
+$password = 'Github123AXN';
+//
 try {
+    
     $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
