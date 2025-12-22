@@ -8,13 +8,14 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
     exit;
 }
 // Database connection
-require_once "config.php";
+$host = 'localhost';
+$dbname = 'aebas';
+$username = 'root';
+$password = 'mysql';
 
 try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    // Disable emulated prepares for better security
-    $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 } catch(PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }
@@ -26,47 +27,14 @@ if (isset($_POST['return_slno'])) {
     $return_date = $_POST['return_date'];
     
     try {
-        // Start transaction
-        $conn->beginTransaction();
+        // Modified stored procedure call with return date parameter
+        $stmt = $conn->prepare("CALL process_device_return_with_date(?, ?, ?)");
+        $stmt->execute([$slno, $emp_cd, $return_date]);
         
-        // Get device details before deleting (equivalent to stored procedure logic)
-        $stmt = $conn->prepare("SELECT Loc_ID, issu_date FROM issued WHERE device_slno = ? AND emp_cd = ?");
-        $stmt->execute([$slno, $emp_cd]);
-        
-        if ($stmt->rowCount() > 0) {
-            $deviceDetails = $stmt->fetch(PDO::FETCH_ASSOC);
-            $v_loc_id = $deviceDetails['Loc_ID'];
-            $v_issu_date = $deviceDetails['issu_date'];
-            
-            // Insert into returned table with provided return date
-            $stmt = $conn->prepare("INSERT INTO returned (emp_cd, device_slno, Loc_ID, issu_date, return_date) 
-                                    VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$emp_cd, $slno, $v_loc_id, $v_issu_date, $return_date]);
-            
-            // Update device status
-            $stmt = $conn->prepare("UPDATE device SET isissued = 0 WHERE SLNO = ?");
-            $stmt->execute([$slno]);
-            
-            // Delete from issued table
-            $stmt = $conn->prepare("DELETE FROM issued WHERE device_slno = ? AND emp_cd = ?");
-            $stmt->execute([$slno, $emp_cd]);
-            
-            // Commit transaction
-            $conn->commit();
-            
-            // Redirect back to the same page with success message
-            header("Location: return.php?emp_cd=" . urlencode($emp_cd) . "&success=1");
-            exit();
-        } else {
-            // Rollback if no device found
-            $conn->rollBack();
-            $error = "Error: Device not found in issued records.";
-        }
+        // Redirect back to the same page with success message
+        header("Location: return.php?emp_cd=" . urlencode($emp_cd) . "&success=1");
+        exit();
     } catch(PDOException $e) {
-        // Rollback on error
-        if ($conn->inTransaction()) {
-            $conn->rollBack();
-        }
         $error = "Error processing return: " . $e->getMessage();
     }
 }
