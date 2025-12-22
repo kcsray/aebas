@@ -1,5 +1,6 @@
 <?php
 // Database connection
+
 require_once "config.php";
 
 try {
