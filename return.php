@@ -131,7 +131,7 @@ if (isset($_GET['emp_cd'])) {
     <div class="container-fluid py-3">
         <div class="row">
             <div class="col">
-                <a href="/aebas" class="btn btn-outline-primary">
+                <a href="/" class="btn btn-outline-primary">
                     <i class="bi bi-house-door"></i> Home
                 </a>
             </div>
