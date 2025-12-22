@@ -21,28 +21,78 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
         exit();
     }else{
         require_once "config.php";
-        // Prepare an insert statement
-        $sql = "CALL IssueDevice(:active_emp, :dev_id, :off_loc, :issue_date)";
-
-        if($stmt = $pdo->prepare($sql)){
-            // Bind variables to the prepared statement as parameters
-            $stmt->bindParam(":active_emp", $input_active_emp, PDO::PARAM_STR);
-            $stmt->bindParam(":dev_id", $input_dev_id, PDO::PARAM_STR);
-            $stmt->bindParam(":off_loc", $input_off_loc, PDO::PARAM_STR);
-            $stmt->bindParam(":issue_date",$input_issue_dt , PDO::PARAM_STR);
-
-            // Attempt to execute the prepared statement
-            if($stmt->execute()){
-                // Records created successfully. Redirect to landing page
-                $_SESSION["SLNO"] = $input_dev_id;
-                header("location: welcome_Vpass.php");
-                exit();
-            } else{
-                echo "Something went wrong. Please try again later.";
+        
+        try {
+            // Start transaction to ensure both operations succeed or fail together
+            $pdo->beginTransaction();
+            
+            // First, check if the device is already issued
+            $checkSql = "SELECT Isissued FROM device WHERE SLNO = :dev_id FOR UPDATE";
+            $checkStmt = $pdo->prepare($checkSql);
+            $checkStmt->bindParam(":dev_id", $input_dev_id, PDO::PARAM_STR);
+            $checkStmt->execute();
+            
+            if ($checkStmt->rowCount() > 0) {
+                $device = $checkStmt->fetch(PDO::FETCH_ASSOC);
+                
+                // Check if device is already issued
+                if ($device['Isissued'] == 1) {
+                    // Device is already issued, rollback and show error
+                    $pdo->rollBack();
+                    echo "<div class='alert alert-danger'>Error: This device is already issued to another employee.</div>";
+                } else {
+                    // Insert into 'issued' table
+                    $insertSql = "INSERT INTO issued (emp_cd, device_slno, Loc_ID, issu_date) 
+                                  VALUES (:active_emp, :dev_id, :off_loc, :issue_date)";
+                    
+                    $insertStmt = $pdo->prepare($insertSql);
+                    $insertStmt->bindParam(":active_emp", $input_active_emp, PDO::PARAM_STR);
+                    $insertStmt->bindParam(":dev_id", $input_dev_id, PDO::PARAM_STR);
+                    $insertStmt->bindParam(":off_loc", $input_off_loc, PDO::PARAM_STR);
+                    $insertStmt->bindParam(":issue_date", $input_issue_dt, PDO::PARAM_STR);
+                    
+                    if ($insertStmt->execute()) {
+                        // Update status in 'device' table to 1 (issued)
+                        $updateSql = "UPDATE device SET Isissued = 1 WHERE SLNO = :dev_id";
+                        $updateStmt = $pdo->prepare($updateSql);
+                        $updateStmt->bindParam(":dev_id", $input_dev_id, PDO::PARAM_STR);
+                        
+                        if ($updateStmt->execute()) {
+                            // Commit the transaction
+                            $pdo->commit();
+                            
+                            // Records created successfully. Redirect to landing page
+                            $_SESSION["SLNO"] = $input_dev_id;
+                            header("location: welcome_Vpass.php");
+                            exit();
+                        } else {
+                            $pdo->rollBack();
+                            echo "<div class='alert alert-danger'>Error updating device status.</div>";
+                        }
+                    } else {
+                        $pdo->rollBack();
+                        echo "<div class='alert alert-danger'>Error inserting issue record.</div>";
+                    }
+                }
+            } else {
+                $pdo->rollBack();
+                echo "<div class='alert alert-danger'>Error: Device not found.</div>";
             }
+            
+            // Close statements
+            unset($checkStmt);
+            unset($insertStmt);
+            if (isset($updateStmt)) {
+                unset($updateStmt);
+            }
+            
+        } catch (PDOException $e) {
+            // Rollback on any exception
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            echo "<div class='alert alert-danger'>Database error: " . htmlspecialchars($e->getMessage()) . "</div>";
         }
-        // Close statement
-        unset($stmt);
     }
 }
 ?>
@@ -78,6 +128,9 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
+        .alert {
+            margin-top: 20px;
+        }
     </style>
     <title>Issue BAS Device</title>
 </head>
@@ -107,7 +160,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 
             <div class="form-group">
                 <label for="issue_dt">Issue Date:</label>
-                <input id="issue_dt" name="issue_dt" type="date" data-date="" data-date-format="DD MMMM YYYY" value="2024-01-01" required>
+                <input id="issue_dt" name="issue_dt" type="date" data-date="" data-date-format="DD MMMM YYYY" value="<?php echo date('Y-m-d'); ?>" required>
                 <div class="invalid-feedback">Please fill out this field with valid Data</div>
             </div>
 
@@ -228,6 +281,25 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             });
         });
 
+        // Function to update device dropdown to show only unissued devices
+        $(document).ready(function(){
+            // Initially load all devices
+            var dev_code='dev_code';
+            
+            $.ajax({
+                url:"getdata_BAS.php",
+                type:'POST',
+                data:{dev_code:dev_code},
+                success:function(data,status){
+                    $('#dev_id').html(data);
+                }
+            });
+            
+            // Optionally filter to show only available devices
+            // This would require modifying getdata_BAS.php to accept a parameter
+            // or creating a new endpoint that returns only unissued devices
+        });
+
         function pulsar(e,obj) {
             tecla = (document.all) ? e.keyCode : e.which;
             if (tecla!="8" && tecla!="0"){
@@ -238,14 +310,8 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             }
         }
 
-        function getDate(){
-            var todaydate = new Date();
-            var day = todaydate.getDate();
-            var month = todaydate.getMonth() + 1;
-            var year = todaydate.getFullYear();
-            var datestring = year + "/" + month + "/" + day;
-            return datestring;
-        }
+        // Set default date to today
+        document.getElementById('issue_dt').valueAsDate = new Date();
     </script>
 </body>
 </html>
