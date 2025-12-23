@@ -155,7 +155,7 @@ try {
     <div class="main-container">
         <div class="text-center mb-5">
             <h1 class="display-5 fw-bold text-dark mb-3">
-                <i class="fas fa-exchange-alt text-primary me-2"></i>Device Management Portal
+                <i class="fas fa-exchange-alt text-primary me-2"></i>Device Management Portal by KIRANCHAND
             </h1>
             <p class="welcome-message">
                 Manage device issuance, returns, and generate comprehensive reports
