@@ -1,20 +1,20 @@
 <?php
 // Database connection
-//
+/*
+$host = 'localhost';
+$dbname = 'aebas';
+$username = 'root';
 $password = 'mysql';
-$host = 'sql100.infinityfree.com';
-$dbname = 'if0_40578902_nicaebas';
-$username = 'if0_40578902';
-$password = 'Github123AXN';
-//
+*/
+require_once "config.php";
 try {
-    
     $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
     // Fetch device statistics
-    $totalDevices = $conn->query("SELECT COUNT(*) FROM device")->fetchColumn();
-    $availableDevices = $conn->query("SELECT COUNT(*) FROM device WHERE Isissued = 0")->fetchColumn();
+    $totalDevices = $conn->query("SELECT COUNT(*) FROM device ")->fetchColumn();
+    $defectiveDevices = $conn->query("SELECT COUNT(*) FROM device WHERE dev_status=0")->fetchColumn();
+    $availableDevices = $conn->query("SELECT COUNT(*) FROM device WHERE Isissued = 0 and dev_status <> 0 ")->fetchColumn();
     $issuedDevices = $conn->query("SELECT COUNT(*) FROM device WHERE Isissued = 1")->fetchColumn();
     
 } catch(PDOException $e) {
@@ -201,7 +201,7 @@ try {
 
         <!-- Real-time Stats Section -->
         <div class="row mt-4">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card">
                     <div class="card-header">
                         <i class="fas fa-laptop me-2"></i> Total Devices
@@ -212,18 +212,31 @@ try {
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Total Defective
+                    </div>
+                    <div class="card-body text-center">
+                        <a href="#" class="btn btn-login btn-custom me-2">
+                            <div class="stat-number text-danger"><?php echo $defectiveDevices; ?></div>
+                        </a>
+                        <p class="text-muted mb-0">Devices with issues</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
                 <div class="card">
                     <div class="card-header">
                         <i class="fas fa-check-circle me-2"></i> Available
                     </div>
                     <div class="card-body text-center">
                          <a href="device_rpt.php" class="btn btn-login btn-custom me-2"><div class="stat-number text-success"><?php echo $availableDevices; ?></div></a>
-                        <p class="text-muted mb-0">Available</p>
+                        <p class="text-muted mb-0">Available for issuance</p>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card">
                     <div class="card-header">
                         <i class="fas fa-users me-2"></i> Issued
