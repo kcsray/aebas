@@ -1,4 +1,5 @@
 <?php
+
 // Database connection
 require_once 'config.php';
 
@@ -6,8 +7,18 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    // Query to get all devices with their issue status
-    $sql = "SELECT SLNO as 'Device SLNO', Isissued, dev_status FROM device";
+    // Modified query to include office location
+    // Using LEFT JOIN to include devices even if they haven't been issued yet
+    $sql = "SELECT 
+                d.SLNO as 'Device SLNO', 
+                d.Isissued, 
+                d.dev_status,
+                COALESCE(ol.Office_Location, 'Not Assigned') as 'Office Location'
+            FROM device d
+            LEFT JOIN issued i ON d.SLNO = i.device_slno
+            LEFT JOIN office_loc ol ON i.Loc_ID = ol.Location_CD
+            ORDER BY d.SLNO";
+    
     $stmt = $pdo->query($sql);
     $devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -15,7 +26,7 @@ try {
     $availableCount = 0;
     $issuedCount = 0;
     foreach ($devices as $device) {
-        if ($device['Isissued'] == 0 && $device['dev_status'] == 1  ) {
+        if ($device['Isissued'] == 0 && $device['dev_status'] == 1) {
             $availableCount++;
         } else {
             if ($device['Isissued'] == 1)
@@ -186,6 +197,7 @@ try {
                                     <tr>
                                         <th>#</th>
                                         <th>Device Serial Number</th>
+                                        <th>Office Location</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
@@ -194,6 +206,7 @@ try {
                                         <tr>
                                             <td><?php echo $index + 1; ?></td>
                                             <td><?php echo htmlspecialchars($device['Device SLNO']); ?></td>
+                                            <td><?php echo htmlspecialchars($device['Office Location']); ?></td>
                                             <td>
                                                 <?php if ($device['Isissued'] == 0): ?>
                                                     <span class="badge status-badge-available">
