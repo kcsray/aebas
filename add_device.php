@@ -5,7 +5,7 @@ require_once 'config.php';
 // Handle AJAX search requests separately - MUST be at the very top
 if(isset($_GET['ajax_search']) && isset($_GET['search'])) {
     $searchTerm = $_GET['search'];
-    $query = "SELECT SLNO, Type FROM Device 
+    $query = "SELECT SLNO, Type FROM device 
               WHERE SLNO LIKE :search OR Type LIKE :search 
               ORDER BY SLNO LIMIT 10";
     
@@ -29,10 +29,10 @@ if(isset($_GET['ajax_search']) && isset($_GET['search'])) {
     exit;
 }
 
-// Handle Add Device
+// Handle Add device
 if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_device'])) {
     try {
-        $query = "INSERT INTO Device (SLNO, Type, Isissued, dev_status) 
+        $query = "INSERT INTO device (SLNO, Type, Isissued, dev_status) 
                   VALUES (:SLNO, :Type, :Isissued, :dev_status)";
         
         $stmt = $pdo->prepare($query);
@@ -52,10 +52,10 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_device'])) {
     }
 }
 
-// Handle Edit Device
+// Handle Edit device
 if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_device'])) {
     try {
-        $query = "UPDATE Device 
+        $query = "UPDATE device 
                   SET Type = :Type, Isissued = :Isissued, dev_status = :dev_status 
                   WHERE SLNO = :SLNO";
         
@@ -80,17 +80,17 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_device'])) {
 }
 
 // Get device data for editing if SLNO is provided in URL
-$editDeviceData = null;
+$editdeviceData = null;
 if(isset($_GET['load_device'])) {
-    $query = "SELECT * FROM Device WHERE SLNO = :SLNO LIMIT 1";
+    $query = "SELECT * FROM device WHERE SLNO = :SLNO LIMIT 1";
     $stmt = $pdo->prepare($query);
     $stmt->bindParam(":SLNO", $_GET['load_device']);
     $stmt->execute();
-    $editDeviceData = $stmt->fetch();
+    $editdeviceData = $stmt->fetch();
 }
 
 // Get all devices for the table
-$query = "SELECT * FROM Device ORDER BY SLNO";
+$query = "SELECT * FROM device ORDER BY SLNO";
 $devices = $pdo->query($query)->fetchAll();
 
 // Get statistics
@@ -99,7 +99,7 @@ $statsQuery = "SELECT
     SUM(CASE WHEN dev_status = 1 THEN 1 ELSE 0 END) as ok,
     SUM(CASE WHEN Isissued = 1 THEN 1 ELSE 0 END) as issued,
     SUM(CASE WHEN dev_status = 0 THEN 1 ELSE 0 END) as defective
-    FROM Device";
+    FROM device";
 $stats = $pdo->query($statsQuery)->fetch();
 
 // Check for success message
@@ -112,7 +112,7 @@ if(isset($_GET['success'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Device Management System - Add/Edit Devices</title>
+    <title>device Management System - Add/Edit devices</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Select2 for searchable dropdown -->
@@ -182,11 +182,11 @@ if(isset($_GET['success'])) {
     <div class="container">
         <div class="row mb-4">
             <div class="col-12 text-center">
-                <h1 class="text-primary">📱 Device Management System</h1>
-                <p class="lead">Add New Device & Edit Existing Devices</p>
+                <h1 class="text-primary">📱 device Management System</h1>
+                <p class="lead">Add New device & Edit Existing devices</p>
                 <div class="d-flex justify-content-center gap-3 mt-3">
                     <a href="/aebas" class="btn btn-primary">➕ Home</a>
-                    <a href="total_device_rpt.php" class="btn btn-outline-secondary">📋 View All Devices</a>
+                    <a href="total_device_rpt.php" class="btn btn-outline-secondary">📋 View All devices</a>
                 </div>
             </div>
         </div>
@@ -194,7 +194,7 @@ if(isset($_GET['success'])) {
         <!-- Success/Error Messages -->
         <?php if(isset($addSuccess) && $addSuccess): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            ✅ Device added successfully!
+            ✅ device added successfully!
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         <?php endif; ?>
@@ -208,7 +208,7 @@ if(isset($_GET['success'])) {
         
         <?php if(isset($editSuccess) && $editSuccess): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            ✅ Device updated successfully!
+            ✅ device updated successfully!
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         <?php endif; ?>
@@ -221,12 +221,12 @@ if(isset($_GET['success'])) {
         <?php endif; ?>
 
         <div class="row">
-            <!-- Device List (Left Column) -->
+            <!-- device List (Left Column) -->
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <span>Device Inventory (<?php echo count($devices); ?> devices)</span>
-                        <button class="btn btn-sm btn-light" onclick="refreshDeviceList()">
+                        <span>device Inventory (<?php echo count($devices); ?> devices)</span>
+                        <button class="btn btn-sm btn-light" onclick="refreshdeviceList()">
                             🔄 Refresh
                         </button>
                     </div>
@@ -272,7 +272,7 @@ if(isset($_GET['success'])) {
                 </div>
             </div>
 
-            <!-- Device Management Forms (Right Column) -->
+            <!-- device Management Forms (Right Column) -->
             <div class="col-md-4">
                 <!-- Tab Navigation -->
                 <ul class="nav nav-tabs" id="deviceTabs" role="tablist">
@@ -294,14 +294,14 @@ if(isset($_GET['success'])) {
 
                 <!-- Tab Content -->
                 <div class="tab-content" id="deviceTabsContent">
-                    <!-- Add New Device Tab -->
+                    <!-- Add New device Tab -->
                     <div class="tab-pane fade <?php echo !isset($_GET['load_device']) ? 'show active' : ''; ?>" 
                          id="add" role="tabpanel" aria-labelledby="add-tab">
-                        <h4 class="mb-4 text-success">Add New Device</h4>
+                        <h4 class="mb-4 text-success">Add New device</h4>
                         
                         <form method="POST" action="">
                             <div class="mb-3">
-                                <label class="form-label">Device SLNO *</label>
+                                <label class="form-label">device SLNO *</label>
                                 <input type="text" class="form-control" name="SLNO" 
                                        pattern="[A-Za-z0-9]{10}" title="10 characters alphanumeric" 
                                        maxlength="10" required>
@@ -309,7 +309,7 @@ if(isset($_GET['success'])) {
                             </div>
                             
                             <div class="mb-3">
-                                <label class="form-label">Device Type *</label>
+                                <label class="form-label">device Type *</label>
                                 <select class="form-select" name="Type" required>
                                     <option value="">Select Type</option>
                                     <option value="L1">L1</option>
@@ -326,7 +326,7 @@ if(isset($_GET['success'])) {
                                     <input class="form-check-input" type="checkbox" 
                                            name="Isissued" value="1" id="isIssued" role="switch">
                                     <label class="form-check-label" for="isIssued">
-                                        Device Issued?
+                                        device Issued?
                                     </label>
                                 </div>
                             </div>
@@ -336,26 +336,26 @@ if(isset($_GET['success'])) {
                                     <input class="form-check-input" type="checkbox" 
                                            name="dev_status" value="1" id="devStatus" checked role="switch">
                                     <label class="form-check-label" for="devStatus">
-                                        Device is OK
+                                        device is OK
                                     </label>
                                     <div class="form-text">Turn OFF if device is defective</div>
                                 </div>
                             </div>
                             
                             <button type="submit" name="add_device" class="btn btn-success w-100">
-                                ➕ Add New Device
+                                ➕ Add New device
                             </button>
                         </form>
                     </div>
 
-                    <!-- Edit Device Tab -->
+                    <!-- Edit device Tab -->
                     <div class="tab-pane fade <?php echo isset($_GET['load_device']) ? 'show active' : ''; ?>" 
                          id="edit" role="tabpanel" aria-labelledby="edit-tab">
-                        <h4 class="mb-4 text-primary">Edit Device</h4>
+                        <h4 class="mb-4 text-primary">Edit device</h4>
                         
-                        <?php if($editDeviceData): ?>
+                        <?php if($editdeviceData): ?>
                         <div class="alert alert-info mb-3">
-                            Editing: <strong><?php echo htmlspecialchars($editDeviceData['SLNO']); ?></strong>
+                            Editing: <strong><?php echo htmlspecialchars($editdeviceData['SLNO']); ?></strong>
                             <a href="add_device.php" class="float-end btn btn-sm btn-outline-secondary">
                                 ✖ Clear
                             </a>
@@ -364,13 +364,13 @@ if(isset($_GET['success'])) {
                         
                         <form method="POST" action="" id="editForm">
                             <div class="mb-3">
-                                <label class="form-label">Select Device SLNO *</label>
+                                <label class="form-label">Select device SLNO *</label>
                                 <select class="form-control select2-device" name="edit_SLNO" 
                                         id="deviceSelect" required>
                                     <option value="">Search device by SLNO or Type...</option>
-                                    <?php if($editDeviceData): ?>
-                                    <option value="<?php echo htmlspecialchars($editDeviceData['SLNO']); ?>" selected>
-                                        <?php echo htmlspecialchars($editDeviceData['SLNO'] . ' (' . $editDeviceData['Type'] . ')'); ?>
+                                    <?php if($editdeviceData): ?>
+                                    <option value="<?php echo htmlspecialchars($editdeviceData['SLNO']); ?>" selected>
+                                        <?php echo htmlspecialchars($editdeviceData['SLNO'] . ' (' . $editdeviceData['Type'] . ')'); ?>
                                     </option>
                                     <?php endif; ?>
                                 </select>
@@ -378,7 +378,7 @@ if(isset($_GET['success'])) {
                             </div>
                             
                             <div class="mb-3">
-                                <label class="form-label">Device Type *</label>
+                                <label class="form-label">device Type *</label>
                                 <select class="form-select" name="edit_Type" id="editType" required>
                                     <option value="">Select Type</option>
                                     <option value="L1">L1</option>
@@ -395,7 +395,7 @@ if(isset($_GET['success'])) {
                                     <input class="form-check-input" type="checkbox" 
                                            name="edit_Isissued" value="1" id="editIsissued" role="switch">
                                     <label class="form-check-label" for="editIsissued">
-                                        Device Issued?
+                                        device Issued?
                                     </label>
                                 </div>
                             </div>
@@ -405,14 +405,14 @@ if(isset($_GET['success'])) {
                                     <input class="form-check-input" type="checkbox" 
                                            name="edit_dev_status" value="1" id="editDevStatus" role="switch">
                                     <label class="form-check-label" for="editDevStatus">
-                                        Device is OK
+                                        device is OK
                                     </label>
                                     <div class="form-text">Turn OFF if device is defective</div>
                                 </div>
                             </div>
                             
                             <button type="submit" name="edit_device" class="btn btn-primary w-100">
-                                ✏️ Update Device
+                                ✏️ Update device
                             </button>
                         </form>
                     </div>
@@ -425,7 +425,7 @@ if(isset($_GET['success'])) {
             <div class="col-md-3">
                 <div class="card text-white bg-primary">
                     <div class="card-body">
-                        <h5 class="card-title">Total Devices</h5>
+                        <h5 class="card-title">Total devices</h5>
                         <h2><?php echo $stats['total'] ?? 0; ?></h2>
                     </div>
                 </div>
@@ -433,7 +433,7 @@ if(isset($_GET['success'])) {
             <div class="col-md-3">
                 <div class="card text-white bg-success">
                     <div class="card-body">
-                        <h5 class="card-title">OK Devices</h5>
+                        <h5 class="card-title">OK devices</h5>
                         <h2><?php echo $stats['ok'] ?? 0; ?></h2>
                     </div>
                 </div>
@@ -441,7 +441,7 @@ if(isset($_GET['success'])) {
             <div class="col-md-3">
                 <div class="card text-white bg-warning">
                     <div class="card-body">
-                        <h5 class="card-title">Issued Devices</h5>
+                        <h5 class="card-title">Issued devices</h5>
                         <h2><?php echo $stats['issued'] ?? 0; ?></h2>
                     </div>
                 </div>
@@ -449,7 +449,7 @@ if(isset($_GET['success'])) {
             <div class="col-md-3">
                 <div class="card text-white bg-danger">
                     <div class="card-body">
-                        <h5 class="card-title">Defective Devices</h5>
+                        <h5 class="card-title">Defective devices</h5>
                         <h2><?php echo $stats['defective'] ?? 0; ?></h2>
                     </div>
                 </div>
@@ -496,23 +496,23 @@ if(isset($_GET['success'])) {
         
         // Load device data when a device is selected
         $('#deviceSelect').on('change', function() {
-            var selectedDevice = $(this).val();
-            if(selectedDevice) {
+            var selecteddevice = $(this).val();
+            if(selecteddevice) {
                 // Switch to Edit tab
                 $('#edit-tab').tab('show');
                 
                 // Update URL
                 var url = new URL(window.location.href);
-                url.searchParams.set('load_device', selectedDevice);
+                url.searchParams.set('load_device', selecteddevice);
                 window.history.pushState({}, '', url);
                 
                 // Fetch device data via AJAX
-                fetchDeviceData(selectedDevice);
+                fetchdeviceData(selecteddevice);
             }
         });
         
         // Function to fetch device data
-        function fetchDeviceData(slno) {
+        function fetchdeviceData(slno) {
             $.ajax({
                 url: 'add_device.php',
                 method: 'GET',
@@ -536,17 +536,17 @@ if(isset($_GET['success'])) {
         }
         
         // Pre-fill edit form if device data is available
-        <?php if($editDeviceData): ?>
-        $('#editType').val('<?php echo $editDeviceData['Type']; ?>');
-        $('#editIsissued').prop('checked', <?php echo $editDeviceData['Isissued'] == 1 ? 'true' : 'false'; ?>);
-        $('#editDevStatus').prop('checked', <?php echo $editDeviceData['dev_status'] == 1 ? 'true' : 'false'; ?>);
+        <?php if($editdeviceData): ?>
+        $('#editType').val('<?php echo $editdeviceData['Type']; ?>');
+        $('#editIsissued').prop('checked', <?php echo $editdeviceData['Isissued'] == 1 ? 'true' : 'false'; ?>);
+        $('#editDevStatus').prop('checked', <?php echo $editdeviceData['dev_status'] == 1 ? 'true' : 'false'; ?>);
         
         // Ensure Edit tab is active
         $('#edit-tab').tab('show');
         <?php endif; ?>
         
         // Refresh device list function
-        window.refreshDeviceList = function() {
+        window.refreshdeviceList = function() {
             location.reload();
         };
         
