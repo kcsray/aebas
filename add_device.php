@@ -1,4 +1,12 @@
 <?php
+// Initialize the session
+session_start();
+// Check if the user is logged in, if not then redirect him to login page
+if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
+    $_SESSION["pfile"] = htmlspecialchars($_SERVER["PHP_SELF"]);
+    header("location: login.php");
+    exit;
+}
 // Include your existing config file
 require_once 'config.php';
 
@@ -314,10 +322,6 @@ if(isset($_GET['success'])) {
                                     <option value="">Select Type</option>
                                     <option value="L1">L1</option>
                                     <option value="L2">L2</option>
-                                    <option value="M1">M1</option>
-                                    <option value="M2">M2</option>
-                                    <option value="T1">T1</option>
-                                    <option value="T2">T2</option>
                                 </select>
                             </div>
                             
