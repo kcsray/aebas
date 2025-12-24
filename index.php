@@ -107,6 +107,17 @@ try {
             margin: 5px;
         }
         
+        .btn-device {
+            background-color: #9b59b6;
+            border-color: #9b59b6;
+            color: white;
+        }
+        
+        .btn-device:hover {
+            background-color: #8e44ad;
+            border-color: #8e44ad;
+        }
+        
         .action-section {
             background-color: white;
             border-radius: 10px;
@@ -130,6 +141,14 @@ try {
         .stat-number {
             font-size: 2.5rem;
             font-weight: 600;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .btn-action {
+                min-width: 160px;
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
@@ -167,6 +186,8 @@ try {
             <div class="col-md-10">
                 <div class="action-section">
                     <h3 class="text-center mb-4 text-primary">Quick Actions</h3>
+                    
+                    <!-- First Row of Buttons -->
                     <div class="d-flex flex-wrap justify-content-center">
                         <a href="addIssue.php" class="btn btn-success btn-custom btn-action">
                             <i class="fas fa-laptop-medical me-2"></i> Issue Device
@@ -181,6 +202,8 @@ try {
                             <i class="fas fa-chart-bar me-2"></i> Ledger Report
                         </a>
                     </div>
+                    
+                    <!-- Second Row of Buttons -->
                     <div class="d-flex flex-wrap justify-content-center">
                         <a href="add_employee.php" class="btn btn-primary btn-custom btn-action">
                             <i class="fas fa-user-plus me-2"></i> Add Employee
@@ -193,7 +216,14 @@ try {
                         </a>
                         <a href="notyetIsuue_rpt.php" class="btn btn-warning btn-custom btn-action">
                             <i class="fas fa-chart-bar me-2"></i> Emp no Device
-                        </a>                        
+                        </a>
+                    </div>
+                    
+                    <!-- Third Row of Buttons - Added New Button Here -->
+                    <div class="d-flex flex-wrap justify-content-center mt-2">
+                        <a href="add_device.php" class="btn btn-device btn-custom btn-action">
+                            <i class="fas fa-laptop me-2"></i> Add/Edit Device
+                        </a>
                     </div>
                 </div>
             </div>

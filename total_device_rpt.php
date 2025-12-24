@@ -1,14 +1,16 @@
 <?php
 // Database connection
-
-require_once "config.php";
+$host = 'localhost';
+$dbname = 'aebas';
+$username = 'root'; // Replace with your database username
+$password = 'mysql'; // Replace with your database password
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
     // Query to get all devices with their issue status
-    $sql = "SELECT SLNO as 'Device SLNO', Isissued FROM device";
+    $sql = "SELECT SLNO as 'Device SLNO', Isissued, dev_status FROM device";
     $stmt = $pdo->query($sql);
     $devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -16,9 +18,10 @@ try {
     $availableCount = 0;
     $issuedCount = 0;
     foreach ($devices as $device) {
-        if ($device['Isissued'] == 0) {
+        if ($device['Isissued'] == 0 && $device['dev_status'] == 1  ) {
             $availableCount++;
         } else {
+            if ($device['Isissued'] == 1)
             $issuedCount++;
         }
     }
