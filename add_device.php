@@ -185,7 +185,7 @@ if(isset($_GET['success'])) {
                 <h1 class="text-primary">📱 device Management System</h1>
                 <p class="lead">Add New device & Edit Existing devices</p>
                 <div class="d-flex justify-content-center gap-3 mt-3">
-                    <a href="/aebas" class="btn btn-primary">➕ Home</a>
+                    <a href="/" class="btn btn-primary">➕ Home</a>
                     <a href="total_device_rpt.php" class="btn btn-outline-secondary">📋 View All devices</a>
                 </div>
             </div>
