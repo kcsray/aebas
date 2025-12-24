@@ -1,6 +1,6 @@
 <?php
-
 // Database connection
+
 require_once 'config.php';
 
 try {
@@ -22,14 +22,20 @@ try {
     $stmt = $pdo->query($sql);
     $devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Count available and issued devices
+    // Count available, issued, and defective devices
     $availableCount = 0;
     $issuedCount = 0;
+    $defectiveCount = 0;
+    
     foreach ($devices as $device) {
-        if ($device['Isissued'] == 0 && $device['dev_status'] == 1) {
+        if ($device['dev_status'] == 0) {
+            // Device is defective
+            $defectiveCount++;
+        } else if ($device['Isissued'] == 0) {
+            // Device is available (not issued and not defective)
             $availableCount++;
-        } else {
-            if ($device['Isissued'] == 1)
+        } else if ($device['Isissued'] == 1) {
+            // Device is issued
             $issuedCount++;
         }
     }
@@ -88,6 +94,10 @@ try {
         .status-badge-issued {
             background-color: #dc3545;
         }
+        .status-badge-defective {
+            background-color: #ffc107;
+            color: #212529;
+        }
         .summary-cards {
             display: flex;
             justify-content: space-between;
@@ -109,6 +119,10 @@ try {
         }
         .summary-issued {
             background-color: #dc3545;
+        }
+        .summary-defective {
+            background-color: #ffc107;
+            color: #212529;
         }
         
         /* Print-specific styles */
@@ -159,7 +173,7 @@ try {
 <body>
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-10">
+            <div class="col-md-12">
                 <div class="action-buttons">
                     <a href="index.php" class="btn btn-primary home-btn">
                         <i class="fas fa-home"></i> Return Home
@@ -188,6 +202,10 @@ try {
                             <h4><i class="fas fa-times-circle"></i> Issued</h4>
                             <h3><?php echo $issuedCount; ?></h3>
                         </div>
+                        <div class="summary-card summary-defective">
+                            <h4><i class="fas fa-exclamation-triangle"></i> Defective</h4>
+                            <h3><?php echo $defectiveCount; ?></h3>
+                        </div>
                     </div>
                     
                     <?php if (count($devices) > 0): ?>
@@ -208,7 +226,11 @@ try {
                                             <td><?php echo htmlspecialchars($device['Device SLNO']); ?></td>
                                             <td><?php echo htmlspecialchars($device['Office Location']); ?></td>
                                             <td>
-                                                <?php if ($device['Isissued'] == 0): ?>
+                                                <?php if ($device['dev_status'] == 0): ?>
+                                                    <span class="badge status-badge-defective">
+                                                        <i class="fas fa-exclamation-triangle"></i> Defective
+                                                    </span>
+                                                <?php elseif ($device['Isissued'] == 0): ?>
                                                     <span class="badge status-badge-available">
                                                         <i class="fas fa-check-circle"></i> Available
                                                     </span>
