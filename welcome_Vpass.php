@@ -20,7 +20,7 @@ session_start();
     </div>
     <p>
         <a href="addissue.php" class="btn btn-warning">Issue more Device </a>
-        <a href="returned.php?vslno=<?php echo $_SESSION["SLNO"];?>" class="btn btn-danger">Return this Device: <?php echo htmlspecialchars($_SESSION["SLNO"]); ?></a>
+        <a href="index.php"> "clas s="btn btn-danger">Home: </a>
         
     </p>
 </body>
