@@ -157,7 +157,7 @@ try {
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
         <div class="container">
             <a class="navbar-brand" href="#">
-                <i class="fas fa-laptop me-2"></i>AEBAS Device Management
+                <i class="fas fa-laptop me-2"></i>AEBAS Device Management by Kiranchand
             </a>
             <div class="d-flex">
                 <a href="login.php" class="btn btn-login btn-custom me-2">
