@@ -157,7 +157,7 @@ try {
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
         <div class="container">
             <a class="navbar-brand" href="#">
-                <i class="fas fa-laptop me-2"></i>AEBAS Device Management by Kiranchand
+                <i class="fas fa-laptop me-2"></i>AEBAS Device Management
             </a>
             <div class="d-flex">
                 <a href="login.php" class="btn btn-login btn-custom me-2">
@@ -220,9 +220,13 @@ try {
                     </div>
                     
                     <!-- Third Row of Buttons - Added New Button Here -->
+                    <!-- Third Row of Buttons - Added New Button Here -->
                     <div class="d-flex flex-wrap justify-content-center mt-2">
                         <a href="add_device.php" class="btn btn-device btn-custom btn-action">
                             <i class="fas fa-laptop me-2"></i> Add/Edit Device
+                        </a>
+                        <a href="device_transfer.php" class="btn btn-secondary btn-custom btn-action">
+                            <i class="fas fa-exchange-alt me-2"></i> Device Transfer
                         </a>
                     </div>
                 </div>

@@ -1,12 +1,7 @@
 <?php
 // Database connection
-/*
-$host = 'sql100.infinityfree.com';
-$dbname = 'if0_40578902_nicaebas';
-$username = 'if0_40578902';
-$password = 'Github123AXN';
-*/
-require_once "config.php";
+require_once 'config.php';
+
 try {
     $conn = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -22,17 +17,31 @@ $issuedDevices = [];
 if (isset($_GET['emp_id'])) {
     $emp_id = $_GET['emp_id'];
     $stmt = $conn->prepare("
-        SELECT i.device_slno, i.Loc_ID, e.loc_name, i.issu_date, e.emp_name 
+        SELECT 
+            i.device_slno, 
+            i.Loc_ID as issued_location_id,
+            ol_issued.Office_Location as issued_location_name,
+            e.Loc_cd as employee_location_id,
+            ol_emp.Office_Location as employee_location_name,
+             DATE_FORMAT(i.issu_date, '%d-%m-%Y') as issu_date, 
+            e.emp_name 
         FROM issued i
         JOIN emp e ON i.emp_cd = e.Att_ID
+        LEFT JOIN office_loc ol_issued ON i.Loc_ID = ol_issued.Location_CD
+        LEFT JOIN office_loc ol_emp ON e.Loc_cd = ol_emp.Location_CD
         WHERE i.emp_cd = ?
         ORDER BY i.issu_date DESC
     ");
     $stmt->execute([$emp_id]);
     $issuedDevices = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Get employee name for the report header
-    $stmt = $conn->prepare("SELECT emp_name FROM emp WHERE Att_ID = ?");
+    // Get employee name and location for the report header
+    $stmt = $conn->prepare("
+        SELECT e.emp_name, e.Loc_cd, ol.Office_Location 
+        FROM emp e
+        LEFT JOIN office_loc ol ON e.Loc_cd = ol.Location_CD
+        WHERE e.Att_ID = ?
+    ");
     $stmt->execute([$emp_id]);
     $employee = $stmt->fetch(PDO::FETCH_ASSOC);
 }
@@ -48,7 +57,7 @@ if (isset($_GET['emp_id'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .report-container { 
-            max-width: 1200px; 
+            max-width: 1400px; 
             margin: 20px auto; 
             padding: 20px;
             background-color: #fff;
@@ -111,6 +120,16 @@ if (isset($_GET['emp_id'])) {
         .employee-row.hidden {
             display: none;
         }
+        .location-info {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .location-badge {
+            font-size: 0.85em;
+            padding: 4px 8px;
+        }
         @media print {
             .no-print { display: none; }
             .report-title { color: #000; }
@@ -118,6 +137,22 @@ if (isset($_GET['emp_id'])) {
                 box-shadow: none;
                 padding: 0;
             }
+            .table {
+                font-size: 12px;
+            }
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .status-active {
+            background-color: #28a745;
+        }
+        .status-inactive {
+            background-color: #dc3545;
         }
     </style>
 </head>
@@ -125,7 +160,7 @@ if (isset($_GET['emp_id'])) {
     <div class="container-fluid py-3 no-print">
         <div class="row">
             <div class="col">
-                <a href="/" class="btn btn-outline-primary">
+                <a href="/aebas" class="btn btn-outline-primary">
                     <i class="bi bi-house-door"></i> Home
                 </a>
             </div>
@@ -135,6 +170,7 @@ if (isset($_GET['emp_id'])) {
     <div class="report-container">
         <div class="report-header">
             <div class="report-title">Device Issue Report</div>
+            <p class="text-muted">Comprehensive device issuance tracking with location details</p>
         </div>
 
         <form method="get" action="" class="mb-4">
@@ -163,16 +199,40 @@ if (isset($_GET['emp_id'])) {
                     </table>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary">Generate Report</button>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-file-earmark-text"></i> Generate Report
+            </button>
         </form>
 
         <?php if (isset($_GET['emp_id'])): ?>
             <div class="report-header">
-                <div class="employee-info mb-3">
+                <div class="employee-info mb-4">
                     <h4 class="mb-3">Employee Details</h4>
-                    <p class="mb-1"><strong>Name:</strong> <?= htmlspecialchars($employee['emp_name']) ?></p>
-                    <p class="mb-1"><strong>Employee ID:</strong> <?= htmlspecialchars($emp_id) ?></p>
-                    <p class="mb-1"><strong>Report Date:</strong> <?= date('Y-m-d H:i:s') ?></p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Personal Information</h5>
+                                    <p class="mb-1"><strong>Name:</strong> <?= htmlspecialchars($employee['emp_name']) ?></p>
+                                    <p class="mb-1"><strong>Employee ID:</strong> <span class="badge bg-primary"><?= htmlspecialchars($emp_id) ?></span></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Location Information</h5>
+                                    <?php if ($employee['Office_Location']): ?>
+                                        <p class="mb-1"><strong>Assigned Location:</strong> <?= htmlspecialchars($employee['Office_Location']) ?></p>
+                                        <p class="mb-0"><small class="text-muted">Location Code: <?= htmlspecialchars($employee['Loc_cd']) ?></small></p>
+                                    <?php else: ?>
+                                        <p class="mb-0 text-warning"><i class="bi bi-exclamation-triangle"></i> No location assigned</p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted"><strong>Report Generated:</strong> <?= date('F j, Y, g:i a') ?></p>
                 </div>
             </div>
 
@@ -183,35 +243,117 @@ if (isset($_GET['emp_id'])) {
                             <tr>
                                 <th>#</th>
                                 <th>Device Serial No</th>
-                                <th>Location ID</th>
-                                <th>Location Name</th>
                                 <th>Issue Date</th>
+                                <th>Issued From Location</th>
+                                <th>Employee's Assigned Location</th>
+                                <th>Location Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($issuedDevices as $index => $device): ?>
                                 <tr>
                                     <td><?= $index + 1 ?></td>
-                                    <td><?= htmlspecialchars($device['device_slno']) ?></td>
-                                    <td><?= htmlspecialchars($device['Loc_ID']) ?></td>
-                                    <td><?= htmlspecialchars($device['loc_name']) ?></td>
-                                    <td><?= htmlspecialchars($device['issu_date']) ?></td>
+                                    <td>
+                                        <strong><?= htmlspecialchars($device['device_slno']) ?></strong>
+                                    </td>
+                                    <td>
+                                        <?= htmlspecialchars(date('M d, Y', strtotime($device['issu_date']))) ?>
+                                        <br><small class="text-muted"><?= htmlspecialchars($device['issu_date']) ?></small>
+                                    </td>
+                                    <td>
+                                        <?php if ($device['issued_location_name']): ?>
+                                            <?= htmlspecialchars($device['issued_location_name']) ?>
+                                            <br><small class="text-muted">Code: <?= htmlspecialchars($device['issued_location_id']) ?></small>
+                                        <?php else: ?>
+                                            <span class="text-warning">N/A</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($device['employee_location_name']): ?>
+                                            <?= htmlspecialchars($device['employee_location_name']) ?>
+                                            <br><small class="text-muted">Code: <?= htmlspecialchars($device['employee_location_id']) ?></small>
+                                        <?php else: ?>
+                                            <span class="text-warning">N/A</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php 
+                                        $locationsMatch = ($device['issued_location_id'] == $device['employee_location_id']);
+                                        if ($device['issued_location_name'] && $device['employee_location_name']):
+                                        ?>
+                                            <?php if ($locationsMatch): ?>
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle"></i> Match
+                                                </span>
+                                                <br><small>Same location</small>
+                                            <?php else: ?>
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-exclamation-triangle"></i> Different
+                                                </span>
+                                                <br><small>Location mismatch</small>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary">Incomplete Data</span>
+                                        <?php endif; ?>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
+                
                 <div class="summary">
-                    <p class="fw-bold">Total Devices Issued: <?= count($issuedDevices) ?></p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Summary</h5>
+                            <p class="mb-1"><strong>Total Devices Issued:</strong> <?= count($issuedDevices) ?></p>
+                            <?php 
+                            // Calculate location matches
+                            $matches = 0;
+                            foreach ($issuedDevices as $device) {
+                                if ($device['issued_location_id'] == $device['employee_location_id'] && 
+                                    $device['issued_location_name'] && $device['employee_location_name']) {
+                                    $matches++;
+                                }
+                            }
+                            ?>
+                            <p class="mb-0">
+                                <strong>Location Matches:</strong> 
+                                <?= $matches ?> of <?= count($issuedDevices) ?> 
+                                (<?= round(($matches/count($issuedDevices))*100, 1) ?>%)
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Legend</h5>
+                            <p class="mb-1">
+                                <span class="badge bg-success">Match</span> = Device issued from employee's assigned location
+                            </p>
+                            <p class="mb-0">
+                                <span class="badge bg-warning text-dark">Different</span> = Device issued from different location
+                            </p>
+                        </div>
+                    </div>
                 </div>
             <?php else: ?>
-                <div class="no-data">No devices issued to this employee.</div>
+                <div class="no-data">
+                    <i class="bi bi-inbox" style="font-size: 48px; color: #ccc; display: block; margin-bottom: 15px;"></i>
+                    <h4>No Devices Issued</h4>
+                    <p>This employee does not have any devices currently issued to them.</p>
+                </div>
             <?php endif; ?>
 
-            <div class="d-flex justify-content-end mt-4 no-print">
-                <button class="btn btn-success" onclick="window.print()">
-                    <i class="bi bi-printer"></i> Print Report
+            <div class="d-flex justify-content-between mt-4 no-print">
+                <button class="btn btn-outline-secondary" onclick="window.history.back()">
+                    <i class="bi bi-arrow-left"></i> Back
                 </button>
+                <div>
+                    <button class="btn btn-success" onclick="window.print()">
+                        <i class="bi bi-printer"></i> Print Report
+                    </button>
+                    <button class="btn btn-info ms-2" onclick="exportToCSV()">
+                        <i class="bi bi-download"></i> Export CSV
+                    </button>
+                </div>
             </div>
         <?php endif; ?>
     </div>
@@ -273,6 +415,44 @@ if (isset($_GET['emp_id'])) {
                 }
             });
         });
+
+        // Function to export report to CSV
+        function exportToCSV() {
+            <?php if (isset($_GET['emp_id']) && !empty($issuedDevices)): ?>
+                let csv = [];
+                // Add headers
+                csv.push(['Device Serial No', 'Issue Date', 'Issued Location', 'Issued Location Code', 'Employee Location', 'Employee Location Code', 'Location Status']);
+                
+                // Add data rows
+                <?php foreach ($issuedDevices as $device): ?>
+                    let status = '<?= ($device['issued_location_id'] == $device['employee_location_id']) ? "Match" : "Different" ?>';
+                    csv.push([
+                        '<?= addslashes($device['device_slno']) ?>',
+                        '<?= addslashes($device['issu_date']) ?>',
+                        '<?= addslashes($device['issued_location_name'] ?? 'N/A') ?>',
+                        '<?= addslashes($device['issued_location_id'] ?? 'N/A') ?>',
+                        '<?= addslashes($device['employee_location_name'] ?? 'N/A') ?>',
+                        '<?= addslashes($device['employee_location_id'] ?? 'N/A') ?>',
+                        status
+                    ]);
+                <?php endforeach; ?>
+                
+                // Convert to CSV string
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csv.forEach(row => {
+                    csvContent += row.map(cell => `"${cell}"`).join(",") + "\r\n";
+                });
+                
+                // Create download link
+                let encodedUri = encodeURI(csvContent);
+                let link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "device_report_<?= isset($_GET['emp_id']) ? $_GET['emp_id'] : 'employee' ?>_<?= date('Y-m-d') ?>.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            <?php endif; ?>
+        }
     </script>
 </body>
 </html>
